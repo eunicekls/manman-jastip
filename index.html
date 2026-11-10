@@ -86,11 +86,11 @@ nav button[aria-current="true"]{color:var(--accent)}
 <section id="v-harga">
   <div class="card">
     <div class="spread" style="margin-bottom:10px"><h2 style="margin:0">Cek harga</h2>
-      <label style="display:flex;align-items:center;gap:6px;font-size:14px">¥1 = Rp<input id="h_kurs" type="number" inputmode="decimal" step="any" style="width:96px;padding:8px 10px;font-size:16px;font-weight:700;text-align:right"></label></div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:14px">¥1 = Rp<input id="h_kurs" type="text" inputmode="decimal" step="any" style="width:96px;padding:8px 10px;font-size:16px;font-weight:700;text-align:right"></label></div>
     <label style="margin-bottom:10px">Nama barang (opsional)<input id="h_name" placeholder="Contoh: Tas canvas pink"></label>
     <div class="f3">
-      <label>Harga ¥ / pcs<input id="h_cny" type="number" inputmode="decimal" placeholder="0"></label>
-      <label>Berat kg / pcs<input id="h_kg" type="number" inputmode="decimal" placeholder="0"></label>
+      <label>Harga ¥ / pcs<input id="h_cny" type="text" inputmode="decimal" placeholder="0"></label>
+      <label>Berat kg / pcs<input id="h_kg" type="text" inputmode="decimal" placeholder="0"></label>
       <label>Qty<input id="h_qty" type="number" inputmode="numeric" value="1"></label>
     </div>
     <div class="big" id="h_total">Rp0</div>
@@ -147,15 +147,15 @@ nav button[aria-current="true"]{color:var(--accent)}
     <label>eSIM, makan, dll<input id="s_other" type="number" inputmode="numeric"></label></div>
     <p class="break" id="s_modal" style="margin:10px 0 0"></p></div>
   <div class="card"><h3>Bagasi</h3><div class="f2">
-    <label>Total bagasi tim (kg)<input id="s_totalKg" type="number" inputmode="decimal"></label>
+    <label>Total bagasi tim (kg)<input id="s_totalKg" type="text" inputmode="decimal"></label>
     <label>Harga / kg (Rp)<input id="s_hargaKg" type="number" inputmode="numeric"></label>
-    <label>Jatah gratis / orang (kg)<input id="s_freeKg" type="number" inputmode="decimal"></label></div>
+    <label>Jatah gratis / orang (kg)<input id="s_freeKg" type="text" inputmode="decimal"></label></div>
     <h3 style="margin-top:12px">Bagasi pribadi (kg)</h3>
-    <div class="f3"><label id="l_pk0">1<input id="s_pk0" type="number" inputmode="decimal"></label><label id="l_pk1">2<input id="s_pk1" type="number" inputmode="decimal"></label><label id="l_pk2">3<input id="s_pk2" type="number" inputmode="decimal"></label></div>
+    <div class="f3"><label id="l_pk0">1<input id="s_pk0" type="text" inputmode="decimal"></label><label id="l_pk1">2<input id="s_pk1" type="text" inputmode="decimal"></label><label id="l_pk2">3<input id="s_pk2" type="text" inputmode="decimal"></label></div>
     <p class="break" id="s_cap" style="margin:10px 0 0"></p></div>
   <div class="card"><h3>Harga</h3><div class="f2">
-    <label>Kurs 1 ¥ = Rp<input id="s_kurs" type="number" inputmode="decimal"></label>
-    <label>Fee jasa (%)<input id="s_feePct" type="number" inputmode="decimal"></label>
+    <label>Kurs 1 ¥ = Rp<input id="s_kurs" type="text" inputmode="decimal"></label>
+    <label>Fee jasa (%)<input id="s_feePct" type="text" inputmode="decimal"></label>
     <label>Min. fee / barang (Rp)<input id="s_minFee" type="number" inputmode="numeric"></label>
     <label>Bulatkan ke atas (Rp)<input id="s_round" type="number" inputmode="numeric"></label></div></div>
   <div class="card"><h3>Bagi profit</h3><div class="f2">
@@ -194,8 +194,8 @@ nav button[aria-current="true"]{color:var(--accent)}
     <label>Barang<input id="o_item" required placeholder="Contoh: tas canvas pink"></label>
     <div class="f3">
       <label>Qty<input id="o_qty" type="number" inputmode="numeric" value="1" min="1"></label>
-      <label>¥ / pcs<input id="o_cny" type="number" inputmode="decimal" step="any"></label>
-      <label>Kg total<input id="o_kg" type="number" inputmode="decimal" step="any"></label>
+      <label>¥ / pcs<input id="o_cny" type="text" inputmode="decimal" step="any"></label>
+      <label>Kg total<input id="o_kg" type="text" inputmode="decimal" step="any"></label>
     </div>
     <div class="f2">
       <label>Tanggal<input id="o_date" type="date"></label>
@@ -324,7 +324,7 @@ $("t_list").onclick=async e=>{const c=e.target.closest("[data-copy]"),p=e.target
 
 /* ---- rekap ---- */
 function renderRekap(){const c=calc(),s=S(),max=Math.max(c.cap,c.kg,1);
-  $("r_pk").innerHTML=s.members.map((m,i)=>`<div class="spread"><span>${esc(m)}${c.charge[i]?`<span class="break"> · bayar ${rp(c.charge[i])}</span>`:""}</span><span class="row"><button class="sm" data-step="pk" data-i="${i}" data-d="-1">−</button><input class="pkin" data-i="${i}" type="number" inputmode="decimal" step="0.5" value="${c.pk[i]}" style="width:72px;text-align:center;padding:8px"><button class="sm" data-step="pk" data-i="${i}" data-d="1">+</button></span></div>`).join("");
+  $("r_pk").innerHTML=s.members.map((m,i)=>`<div class="spread"><span>${esc(m)}${c.charge[i]?`<span class="break"> · bayar ${rp(c.charge[i])}</span>`:""}</span><span class="row"><button class="sm" data-step="pk" data-i="${i}" data-d="-1">−</button><input class="pkin" data-i="${i}" type="text" inputmode="decimal" step="0.5" value="${c.pk[i]}" style="width:72px;text-align:center;padding:8px"><button class="sm" data-step="pk" data-i="${i}" data-d="1">+</button></span></div>`).join("");
   $("r_free").textContent=num(s.freeKg)+" kg";$("r_total").textContent=num(s.totalKg)+" kg";
   $("r_bar").style.width=Math.min(100,c.kg/max*100)+"%";$("r_be").style.left=Math.min(100,c.be/max*100)+"%";
   $("r_pct").textContent=c.cap?num(c.kg/c.cap*100)+"% terisi":"";
@@ -365,6 +365,8 @@ $("b_merge").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const
 function arm(btn,label,fn){if(btn.dataset.armed){delete btn.dataset.armed;btn.textContent=label;fn();return}btn.dataset.armed=1;btn.textContent="Tekan lagi untuk yakin";setTimeout(()=>{if(btn.dataset.armed){delete btn.dataset.armed;btn.textContent=label}},4000)}
 $("r_orders").onclick=()=>arm($("r_orders"),"Hapus semua order",()=>{st.orders=[];save();toast("Semua order dihapus")});
 $("r_all").onclick=()=>arm($("r_all"),"Reset semua (order, katalog, pengaturan)",()=>{st={settings:{...DEF},orders:[],products:[],lastBackup:null,me:0};save();fillSettings();render();toast("Aplikasi direset")});
+/* comma → dot for decimal fields (iPhone Indonesian keyboard types "0,5") */
+document.addEventListener("input",e=>{const t=e.target;if(t.matches&&t.matches('input[inputmode="decimal"]')&&t.value.includes(",")){t.value=t.value.replace(/,/g,".");t.dispatchEvent(new Event("input",{bubbles:true}))}},true);
 /* ---- boot ---- */
 go("harga");
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
