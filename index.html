@@ -169,6 +169,7 @@ nav button[aria-current="true"]{color:var(--accent)}
     <p class="break" style="margin:4px 0 0">Order teman ditambahkan ke HP ini. Order yang sama tidak dobel; yang paling baru diubah yang dipakai.</p>
     <label style="margin-top:12px">Pulihkan dari file backup (ganti semua data)<input id="b_import" type="file" accept=".json,application/json"></label>
   </div>
+  <p class="break" style="text-align:center;margin:0">ManMan Jastip · versi 8</p>
   <div class="card"><h3>Reset (untuk testing)</h3>
     <p class="break" style="margin:0 0 10px">Tidak bisa dibatalkan. Bikin backup dulu kalau datanya masih perlu.</p>
     <div class="list"><button class="del wide" id="r_orders">Hapus semua order</button><button class="del wide" id="r_all">Reset semua (order, katalog, pengaturan)</button></div>
@@ -369,7 +370,7 @@ $("r_all").onclick=()=>arm($("r_all"),"Reset semua (order, katalog, pengaturan)"
 document.addEventListener("input",e=>{const t=e.target;if(t.matches&&t.matches('input[inputmode="decimal"]')&&t.value.includes(",")){t.value=t.value.replace(/,/g,".");t.dispatchEvent(new Event("input",{bubbles:true}))}},true);
 /* ---- boot ---- */
 go("harga");
-if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
 </script>
 </body>

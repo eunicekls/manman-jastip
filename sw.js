@@ -1,24 +1,24 @@
-const CACHE = "manman-v7";
+const CACHE = "manman-v8";
 const FILES = ["./", "./index.html", "./manifest.json", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, { cache: "reload" })))).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
-// Offline first: serve from cache, refresh cache in background when online
+// Pages: try network first (gets updates when online), fall back to cache when offline.
+// Other files: cache first.
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
-  e.respondWith(
-    caches.match(e.request, { ignoreSearch: true }).then(hit => {
-      const net = fetch(e.request).then(res => {
-        if (res && res.ok && new URL(e.request.url).origin === location.origin) {
-          const copy = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, copy));
-        }
+  const isPage = e.request.mode === "navigate" || e.request.destination === "document";
+  if (isPage) {
+    e.respondWith(
+      fetch(e.request, { cache: "no-store" }).then(res => {
+        if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put("./index.html", copy)); }
         return res;
-      }).catch(() => hit);
-      return hit || net;
-    })
-  );
+      }).catch(() => caches.match("./index.html"))
+    );
+    return;
+  }
+  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then(hit => hit || fetch(e.request)));
 });
