@@ -169,7 +169,7 @@ nav button[aria-current="true"]{color:var(--accent)}
     <p class="break" style="margin:4px 0 0">Order teman ditambahkan ke HP ini. Order yang sama tidak dobel; yang paling baru diubah yang dipakai.</p>
     <label style="margin-top:12px">Pulihkan dari file backup (ganti semua data)<input id="b_import" type="file" accept=".json,application/json"></label>
   </div>
-  <p class="break" style="text-align:center;margin:0">ManMan Jastip · versi 8</p>
+  <p class="break" style="text-align:center;margin:0">ManMan Jastip · versi 9</p>
   <div class="card"><h3>Reset (untuk testing)</h3>
     <p class="break" style="margin:0 0 10px">Tidak bisa dibatalkan. Bikin backup dulu kalau datanya masih perlu.</p>
     <div class="list"><button class="del wide" id="r_orders">Hapus semua order</button><button class="del wide" id="r_all">Reset semua (order, katalog, pengaturan)</button></div>
@@ -212,10 +212,10 @@ nav button[aria-current="true"]{color:var(--accent)}
 
 <script>
 const STAT=["Order masuk","Sudah bayar","Dibeli","Dipacking","Dikirim"];
-const DEF={members:["Eun","Fidel","Stell"],ticket:6457060,hotel:950000,visa:800000,other:1000000,totalKg:138,hargaKg:280000,personalKg:[0,0,0],freeKg:0,kurs:2400,feePct:10,minFee:15000,round:5000,splitEqual:90,splitKas:10};
+const DEF={members:["Eun","Fidel","Stell"],ticket:6457060,hotel:950000,visa:800000,other:1000000,totalKg:138,hargaKg:280000,personalKg:[0,0,0],freeKg:0,kurs:2400,feePct:20,minFee:15000,round:5000,splitEqual:90,splitKas:10};
 const KEY="manman-jastip-v1";
 let st={settings:{...DEF},orders:[],products:[],lastBackup:null,me:0};
-try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);st={...st,...d,settings:{...DEF,...(d.settings||{})}}}}catch(e){}
+try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);st={...st,...d,settings:{...DEF,...(d.settings||{})}};if(!st.settings.feeV2){if(+st.settings.feePct===10)st.settings.feePct=20;st.settings.feeV2=1;try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){toast("Gagal simpan di HP")}}
 const $=id=>document.getElementById(id);
 const S=()=>st.settings;
