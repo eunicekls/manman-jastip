@@ -169,7 +169,7 @@ nav button[aria-current="true"]{color:var(--accent)}
     <p class="break" style="margin:4px 0 0">Order teman ditambahkan ke HP ini. Order yang sama tidak dobel; yang paling baru diubah yang dipakai.</p>
     <label style="margin-top:12px">Pulihkan dari file backup (ganti semua data)<input id="b_import" type="file" accept=".json,application/json"></label>
   </div>
-  <p class="break" style="text-align:center;margin:0">ManMan Jastip · versi 9</p>
+  <p class="break" style="text-align:center;margin:0">ManMan Jastip · versi 10</p>
   <div class="card"><h3>Reset (untuk testing)</h3>
     <p class="break" style="margin:0 0 10px">Tidak bisa dibatalkan. Bikin backup dulu kalau datanya masih perlu.</p>
     <div class="list"><button class="del wide" id="r_orders">Hapus semua order</button><button class="del wide" id="r_all">Reset semua (order, katalog, pengaturan)</button></div>
@@ -202,6 +202,7 @@ nav button[aria-current="true"]{color:var(--accent)}
       <label>Tanggal<input id="o_date" type="date"></label>
       <label>Status<select id="o_status"></select></label>
     </div>
+    <label>Fee jasa (Rp) <small style="opacity:.7">— kosongkan = otomatis, isi kalau barang besar/ringkih</small><input id="o_fee" type="number" inputmode="numeric" min="0" step="1000" placeholder="Otomatis"></label>
     <label>Catatan<input id="o_note" placeholder="Warna, ukuran, toko…"></label>
     <div class="note" id="oPrev"></div>
     <button class="pri wide">Simpan</button>
@@ -226,13 +227,14 @@ const today=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOff
 function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2000)}
 
 /* ---- pricing ---- */
-function price(qty,cny,kg,kurs){const s=S();const barang=(+qty||0)*(+cny||0)*(+(kurs||s.kurs)||0);let fee=0;
-  if(barang>0){const r=Math.max(1,+s.round||1);fee=Math.ceil((barang+Math.max(barang*(+s.feePct||0)/100,+s.minFee||0))/r)*r-barang}
-  const bag=(+kg||0)*(+s.hargaKg||0);return{barang,fee,bag,total:barang+fee+bag}}
+function price(qty,cny,kg,kurs,feeOv){const s=S();const barang=(+qty||0)*(+cny||0)*(+(kurs||s.kurs)||0);let fee=0;
+  const manual=feeOv!==undefined&&feeOv!==null&&feeOv!==""&&!isNaN(+feeOv);
+  if(manual)fee=+feeOv;else if(barang>0){const r=Math.max(1,+s.round||1);fee=Math.ceil((barang+Math.max(barang*(+s.feePct||0)/100,+s.minFee||0))/r)*r-barang}
+  const bag=(+kg||0)*(+s.hargaKg||0);return{barang,fee,bag,total:barang+fee+bag,manual}}
 function calc(){const s=S();const modal=(+s.ticket||0)+(+s.hotel||0)+(+s.visa||0)+(+s.other||0),M=s.members.length,modalTim=modal*M;
   const pk=s.members.map((_,i)=>+(s.personalKg||[])[i]||0),pkTot=pk.reduce((a,b)=>a+b,0);
   const cap=Math.max(0,(+s.totalKg||0)-pkTot);let kg=0,bag=0,fee=0,barang=0,total=0;
-  st.orders.forEach(o=>{const p=price(o.qty,o.cny,o.kg,o.kurs);kg+=+o.kg||0;bag+=p.bag;fee+=p.fee;barang+=p.barang;total+=p.total});
+  st.orders.forEach(o=>{const p=price(o.qty,o.cny,o.kg,o.kurs,o.fee);kg+=+o.kg||0;bag+=p.bag;fee+=p.fee;barang+=p.barang;total+=p.total});
   const charge=pk.map(k=>Math.max(0,k-(+s.freeKg||0))*(+s.hargaKg||0)),pribadi=charge.reduce((a,b)=>a+b,0),profit=bag+fee+pribadi-modalTim;
   const share=profit*(+s.splitEqual||0)/100/M,kas=profit*(+s.splitKas||0)/100;
   const be=(+s.hargaKg||0)>0?Math.max(0,(modalTim-fee-pribadi)/(+s.hargaKg)):0;
@@ -275,7 +277,7 @@ function renderOrders(){
   const q=$("o_search").value.trim().toLowerCase();
   const list=st.orders.filter(o=>(filter<0||(+o.status||0)===filter)&&(!q||(o.customer+" "+o.item).toLowerCase().includes(q))).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||b.created-a.created);
   if(!st.orders.length){$("o_list").innerHTML=`<div class="empty">Belum ada order.<br>Tekan <b>+</b> untuk tambah order pertama.</div>`;return}
-  $("o_list").innerHTML=list.map(o=>{const p=price(o.qty,o.cny,o.kg,o.kurs),s=+o.status||0;
+  $("o_list").innerHTML=list.map(o=>{const p=price(o.qty,o.cny,o.kg,o.kurs,o.fee),s=+o.status||0;
     return `<div class="item" data-id="${o.id}"><div class="spread"><span class="t">${esc(o.customer)}</span><span class="num">${rp(p.total)}</span></div>
     <div class="s">${esc(o.item)} · ${num(o.qty)} × ¥${num(o.cny)}${+o.kg?` · ${num(o.kg)} kg`:""} · kurs ${num(o.kurs||S().kurs)}${o.note?" · "+esc(o.note):""}${o.by!=null&&S().members[o.by]?` · dicatat ${esc(S().members[o.by])}`:""}</div>
     <div class="spread"><button class="chip s${s}" data-adv="${o.id}">${STAT[s]} ›</button><button class="sm" data-edit="${o.id}">Ubah</button></div></div>`}).join("")||`<div class="empty">Tidak ada yang cocok.</div>`}
@@ -289,19 +291,19 @@ $("o_list").onclick=e=>{const a=e.target.closest("[data-adv]"),ed=e.target.close
 let editId=null,armed=false,formPid=null;
 $("o_status").innerHTML=STAT.map((n,i)=>`<option value="${i}">${n}</option>`).join("");
 function openForm(o,prefill){editId=o?o.id:null;formPid=o?(o.pid||null):((prefill&&prefill.pid)||null);armed=false;$("oDel").textContent="Hapus order ini";
-  const d=o||{date:today(),customer:"",item:"",qty:1,cny:"",kg:"",status:0,note:"",...(prefill||{})};
-  ["customer","item","qty","cny","kg","date","status","note"].forEach(k=>$("o_"+k).value=d[k]??"");
+  const d=o||{date:today(),customer:"",item:"",qty:1,cny:"",kg:"",fee:"",status:0,note:"",...(prefill||{})};
+  ["customer","item","qty","cny","kg","fee","date","status","note"].forEach(k=>$("o_"+k).value=d[k]??"");
   $("oTitle").textContent=o?"Ubah order":"Order baru";$("oDel").hidden=!o;
   $("custs").innerHTML=[...new Set(st.orders.map(x=>x.customer))].map(c=>`<option value="${esc(c)}">`).join("");
   oPrev();$("sheet").hidden=false}
-function oPrev(){const ex=editId&&st.orders.find(x=>x.id===editId);const p=price($("o_qty").value,$("o_cny").value,$("o_kg").value,ex&&ex.kurs);$("oPrev").textContent=`Tagihan: ${rp(p.total)} (barang ${rp(p.barang)} + fee ${rp(p.fee)} + bagasi ${rp(p.bag)})`}
-["o_qty","o_cny","o_kg"].forEach(id=>$(id).addEventListener("input",oPrev));
+function oPrev(){const ex=editId&&st.orders.find(x=>x.id===editId);const auto=price($("o_qty").value,$("o_cny").value,$("o_kg").value,ex&&ex.kurs);$("o_fee").placeholder=`Otomatis: ${rp(auto.fee)}`;const p=price($("o_qty").value,$("o_cny").value,$("o_kg").value,ex&&ex.kurs,$("o_fee").value);$("oPrev").textContent=`Tagihan: ${rp(p.total)} (barang ${rp(p.barang)} + fee ${rp(p.fee)}${p.manual?" (manual)":""} + bagasi ${rp(p.bag)})`}
+["o_qty","o_cny","o_kg","o_fee"].forEach(id=>$(id).addEventListener("input",oPrev));
 $("o_qty").addEventListener("input",()=>{const p=formPid&&(st.products||[]).find(x=>x.id===formPid);if(p&&+p.kg){$("o_kg").value=Math.round(p.kg*(+$("o_qty").value||0)*100)/100;oPrev()}});
 $("fab").onclick=()=>openForm();
 $("oClose").onclick=()=>$("sheet").hidden=true;
 $("sheet").addEventListener("click",e=>{if(e.target.id==="sheet")$("sheet").hidden=true});
 $("oForm").onsubmit=e=>{e.preventDefault();
-  const d={pid:formPid,customer:$("o_customer").value.trim(),item:$("o_item").value.trim(),qty:+$("o_qty").value||1,cny:+$("o_cny").value||0,kg:+$("o_kg").value||0,date:$("o_date").value||today(),status:+$("o_status").value||0,note:$("o_note").value.trim()};
+  const d={pid:formPid,customer:$("o_customer").value.trim(),item:$("o_item").value.trim(),qty:+$("o_qty").value||1,cny:+$("o_cny").value||0,kg:+$("o_kg").value||0,fee:$("o_fee").value===""?null:(+$("o_fee").value||0),date:$("o_date").value||today(),status:+$("o_status").value||0,note:$("o_note").value.trim()};
   d.updated=Date.now();if(editId){Object.assign(st.orders.find(x=>x.id===editId),d)}else st.orders.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),created:Date.now(),kurs:+S().kurs||0,by:+st.me||0,...d});
   save();$("sheet").hidden=true;toast(editId?"Order diubah":"Order tersimpan");if(view!=="order")go("order");else renderOrders()};
 $("oDel").onclick=()=>{if(!armed){armed=true;$("oDel").textContent="Tekan lagi untuk hapus";return}
@@ -311,13 +313,13 @@ $("oDel").onclick=()=>{if(!armed){armed=true;$("oDel").textContent="Tekan lagi u
 function groups(){const g={};st.orders.forEach(o=>{(g[o.customer]=g[o.customer]||[]).push(o)});return g}
 function renderTagihan(){const g=groups(),names=Object.keys(g).sort((a,b)=>a.localeCompare(b));
   if(!names.length){$("t_list").innerHTML=`<div class="empty">Tagihan muncul di sini setelah ada order.</div>`;return}
-  $("t_list").innerHTML=names.map(n=>{const os=g[n];const t=os.reduce((a,o)=>a+price(o.qty,o.cny,o.kg,o.kurs).total,0);const unpaid=os.filter(o=>(+o.status||0)===0).length;
+  $("t_list").innerHTML=names.map(n=>{const os=g[n];const t=os.reduce((a,o)=>a+price(o.qty,o.cny,o.kg,o.kurs,o.fee).total,0);const unpaid=os.filter(o=>(+o.status||0)===0).length;
     return `<div class="item"><div class="spread"><span class="t">${esc(n)}</span><span class="num">${rp(t)}</span></div>
     <div class="s">${os.length} barang · ${num(os.reduce((a,o)=>a+(+o.kg||0),0))} kg</div>
     <div class="spread"><span class="chip ${unpaid?"s1":"s4"}">${unpaid?unpaid+" belum bayar":"Lunas"}</span>
     <span class="row">${unpaid?`<button class="sm" data-paid="${esc(n)}">Tandai lunas</button>`:""}<button class="sm" data-copy="${esc(n)}">Salin pesan</button></span></div></div>`}).join("")}
 function invoice(n){const os=groups()[n]||[];let t=0;
-  const lines=os.map((o,i)=>{const p=price(o.qty,o.cny,o.kg,o.kurs);t+=p.total;return `${i+1}. ${o.item} (${num(o.qty)} pcs) = ${rp(p.total)}`});
+  const lines=os.map((o,i)=>{const p=price(o.qty,o.cny,o.kg,o.kurs,o.fee);t+=p.total;return `${i+1}. ${o.item} (${num(o.qty)} pcs) = ${rp(p.total)}`});
   return `Hai kak ${n}! Ini rincian titipan ManMan Jastip ya 🛍️\n\n${lines.join("\n")}\n\nTOTAL: ${rp(t)}\n\nmakasih kak 🤍`}
 $("t_list").onclick=async e=>{const c=e.target.closest("[data-copy]"),p=e.target.closest("[data-paid]");
   if(p){st.orders.forEach(o=>{if(o.customer===p.dataset.paid&&(+o.status||0)===0){o.status=1;o.updated=Date.now()}});save();renderTagihan();toast("Ditandai sudah bayar")}
@@ -353,7 +355,7 @@ async function shareFile(name,type,text){const file=new File([text],name,{type})
   if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:name});return true}catch(e){if(e.name==="AbortError")return false}}
   const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();a.remove();return true}
 $("b_export").onclick=async()=>{const ok=await shareFile(`manman-backup-${today()}.json`,"application/json",JSON.stringify({...st,app:"manman-jastip"},null,1));if(ok){st.lastBackup=Date.now();save();fillSettings();toast("Backup dibuat")}};
-$("b_csv").onclick=()=>{const rows=[["Tanggal","Customer","Barang","Qty","Harga CNY","Kg","Status","Barang Rp","Fee","Bagasi","Total","Catatan"]].concat(st.orders.map(o=>{const p=price(o.qty,o.cny,o.kg,o.kurs);return[o.date,o.customer,o.item,o.qty,o.cny,o.kg,STAT[+o.status||0],Math.round(p.barang),Math.round(p.fee),Math.round(p.bag),Math.round(p.total),o.note]}));
+$("b_csv").onclick=()=>{const rows=[["Tanggal","Customer","Barang","Qty","Harga CNY","Kg","Status","Barang Rp","Fee","Bagasi","Total","Catatan"]].concat(st.orders.map(o=>{const p=price(o.qty,o.cny,o.kg,o.kurs,o.fee);return[o.date,o.customer,o.item,o.qty,o.cny,o.kg,STAT[+o.status||0],Math.round(p.barang),Math.round(p.fee),Math.round(p.bag),Math.round(p.total),o.note]}));
   shareFile(`manman-order-${today()}.csv`,"text/csv",rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n"))};
 $("b_import").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.orders))throw 0;
   st={settings:{...DEF,...(d.settings||{})},orders:d.orders,products:d.products||[],lastBackup:d.lastBackup||null,me:st.me};save();go("order");toast("Data dipulihkan: "+d.orders.length+" order")}catch(_){toast("File backup tidak valid")}e.target.value=""};
