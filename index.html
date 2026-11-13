@@ -79,7 +79,7 @@ nav button[aria-current="true"]{color:var(--accent)}
 </style>
 </head>
 <body>
-<header><h1>ManMan Jastip</h1><p id="sub">Guangzhou</p></header>
+<header><div class="spread"><h1>ManMan Jastip</h1><span id="syncDot" class="chip s0" hidden></span></div><p id="sub">Guangzhou</p></header>
 
 <main>
 <!-- HARGA -->
@@ -146,6 +146,11 @@ nav button[aria-current="true"]{color:var(--accent)}
 
 <!-- ATUR -->
 <section id="v-atur" hidden>
+  <div class="card"><h3>Sync tim</h3>
+    <p class="break" style="margin:0 0 10px" id="y_info"></p>
+    <label>Kode tim (sama di 3 HP, min. 8 huruf/angka)<input id="y_team" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Contoh: manman-rahasia-2026"></label>
+    <div class="row" style="margin-top:10px"><button class="pri" id="y_on">Sambungkan</button><button id="y_off" hidden>Putuskan</button></div>
+    <p class="break" style="margin:8px 0 0">Semua order, katalog, dan pengaturan otomatis sama di semua HP yang pakai kode ini. Kalau sinyal hilang, tetap bisa input; dikirim otomatis begitu online. Jangan sebar kodenya ke orang lain.</p></div>
   <div class="card"><h3>HP ini milik</h3><select id="s_me"></select>
     <p class="break" style="margin:8px 0 0">Order yang dicatat di HP ini diberi label nama ini, supaya kelihatan saat data digabung.</p></div>
   <div class="card"><h3>Tim</h3><div class="f3"><label>Anggota 1<input id="s_m0"></label><label>Anggota 2<input id="s_m1"></label><label>Anggota 3<input id="s_m2"></label></div></div>
@@ -178,11 +183,11 @@ nav button[aria-current="true"]{color:var(--accent)}
     <div class="row"><button id="b_export">Backup sekarang</button><button id="b_csv">Export Excel (CSV)</button></div>
     <label style="margin-top:12px">Gabung data dari HP teman<input id="b_merge" type="file" accept=".json,application/json"></label>
     <p class="break" style="margin:4px 0 0">Order teman ditambahkan ke HP ini. Order yang sama tidak dobel; yang paling baru diubah yang dipakai.</p>
-    <label style="margin-top:12px">Pulihkan dari file backup (ganti semua data)<input id="b_import" type="file" accept=".json,application/json"></label>
+    <label style="margin-top:12px">Pulihkan dari file backup (ganti semua data, ikut ke semua HP kalau sync aktif)<input id="b_import" type="file" accept=".json,application/json"></label>
   </div>
-  <p class="break" style="text-align:center;margin:0">ManMan Jastip · versi 12</p>
+  <p class="break" style="text-align:center;margin:0">ManMan Jastip · versi 13</p>
   <div class="card"><h3>Reset (untuk testing)</h3>
-    <p class="break" style="margin:0 0 10px">Tidak bisa dibatalkan. Bikin backup dulu kalau datanya masih perlu.</p>
+    <p class="break" style="margin:0 0 10px">Tidak bisa dibatalkan. Kalau sync aktif, order ikut terhapus di <b>semua HP</b>. Bikin backup dulu kalau datanya masih perlu.</p>
     <div class="list"><button class="del wide" id="r_orders">Hapus semua order</button><button class="del wide" id="r_all">Reset semua (order, katalog, pengaturan)</button></div>
   </div>
 </section>
@@ -229,7 +234,8 @@ const DEF={members:["Eun","Fidel","Stell"],ticket:6457060,hotel:950000,visa:8000
 const KEY="manman-jastip-v1";
 let st={settings:{...DEF},orders:[],products:[],lastBackup:null,me:0};
 try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);st={...st,...d,settings:{...DEF,...(d.settings||{})}};if(!st.settings.feeV2){if(+st.settings.feePct===10)st.settings.feePct=20;st.settings.feeV2=1;}if(!st.settings.kursV2){if(+st.settings.kurs===2400)st.settings.kurs=2800;st.settings.kursV2=1;try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}}}catch(e){}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){toast("Gagal simpan di HP")}}
+function localSave(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){toast("Gagal simpan di HP")}}
+function save(){markSettings();localSave();queuePush()}
 const $=id=>document.getElementById(id);
 const S=()=>st.settings;
 const rp=n=>(n<0?"−":"")+"Rp"+Math.round(Math.abs(n)).toLocaleString("id-ID");
@@ -358,7 +364,7 @@ $("v-rekap").addEventListener("click",e=>{const b=e.target.closest("[data-step]"
 $("v-rekap").addEventListener("change",e=>{const t=e.target.closest(".pkin");if(!t)return;const s=S();s.personalKg=[0,1,2].map(j=>+(s.personalKg||[])[j]||0);s.personalKg[+t.dataset.i]=Math.max(0,+t.value||0);save();renderRekap()});
 /* ---- settings ---- */
 const SK=["ticket","hotel","visa","other","totalKg","hargaKg","totalKgGo","hargaKgGo","freeKg","kurs","feePct","minFee","round","splitEqual","splitKas"];
-function fillSettings(){const s=S();$("s_me").innerHTML=s.members.map((m,i)=>`<option value="${i}">${esc(m)}</option>`).join("");$("s_me").value=+st.me||0;SK.forEach(k=>$("s_"+k).value=s[k]);s.members.forEach((m,i)=>{$("s_m"+i).value=m;$("s_pk"+i).value=(s.personalKg||[])[i]||0;$("l_pk"+i).firstChild.textContent=m});settingNotes();
+function fillSettings(){syncUI();const s=S();$("s_me").innerHTML=s.members.map((m,i)=>`<option value="${i}">${esc(m)}</option>`).join("");$("s_me").value=+st.me||0;SK.forEach(k=>$("s_"+k).value=s[k]);s.members.forEach((m,i)=>{$("s_m"+i).value=m;$("s_pk"+i).value=(s.personalKg||[])[i]||0;$("l_pk"+i).firstChild.textContent=m});settingNotes();
   $("b_info").textContent=st.lastBackup?"Backup terakhir: "+new Date(st.lastBackup).toLocaleString("id-ID"):"Belum pernah backup. Backup tiap malam ya."}
 function settingNotes(){const c=calc();$("s_modal").textContent=`Total per orang ${rp(c.modal)} · tim ${rp(c.modalTim)}`;$("s_cap").textContent=`Kapasitas jual: pulang ${num(c.cap)} kg · berangkat ${num(c.capGo)} kg`}
 $("s_save").onclick=()=>{const s={...S()};SK.forEach(k=>s[k]=+$("s_"+k).value||0);s.members=[0,1,2].map(i=>$("s_m"+i).value.trim()||S().members[i]);s.personalKg=[0,1,2].map(i=>+$("s_pk"+i).value||0);
@@ -385,7 +391,62 @@ $("r_all").onclick=()=>arm($("r_all"),"Reset semua (order, katalog, pengaturan)"
 /* comma → dot for decimal fields (iPhone Indonesian keyboard types "0,5") */
 document.addEventListener("input",e=>{const t=e.target;if(t.matches&&t.matches('input[inputmode="decimal"]')&&t.value.includes(",")){t.value=t.value.replace(/,/g,".");t.dispatchEvent(new Event("input",{bubbles:true}))}},true);
 /* ---- boot ---- */
-go("harga");
+/* ---- sync tim (Firebase) ---- */
+const FB_CONFIG=null; /* diisi config Firebase */
+const SDK="https://www.gstatic.com/firebasejs/10.12.2/";
+const SKEY=KEY+"-sync";
+let sy={team:"",sent:{},setSent:0,setJson:""};try{sy={...sy,...JSON.parse(localStorage.getItem(SKEY)||"{}")}}catch(e){}
+function saveSy(){try{localStorage.setItem(SKEY,JSON.stringify(sy))}catch(e){}}
+const setJ=()=>{const{updated,...r}=S();return JSON.stringify(r)};
+if(!sy.setJson)sy.setJson=setJ();
+function markSettings(){const j=setJ();if(j!==sy.setJson){S().updated=Date.now();sy.setJson=j;saveSy()}}
+let db=null,base=null,unsubs=[],ready={},syncState="off",pend=false,pushT=null,loading=null;
+function loadScript(u){return new Promise((ok,no)=>{const x=document.createElement("script");x.src=u;x.onload=ok;x.onerror=no;document.head.appendChild(x)})}
+async function sdk(){if(window.firebase&&firebase.firestore)return;if(!loading)loading=(async()=>{for(const f of["firebase-app-compat.js","firebase-auth-compat.js","firebase-firestore-compat.js"])await loadScript(SDK+f)})().catch(e=>{loading=null;throw e});return loading}
+function syncUI(){const d=$("syncDot");if(!FB_CONFIG||!sy.team){d.hidden=true}else{d.hidden=false;
+  const m={on:["✓ Sync","s4"],pend:["↑ Mengirim…","s1"],off:["Offline","s1"],wait:["Menyambung…","s0"],err:["Sync error","s1"]}[pend&&syncState==="on"?"pend":syncState]||["…","s0"];d.textContent=m[0];d.className="chip "+m[1]}
+  if($("y_info")){$("y_info").textContent=!FB_CONFIG?"Sync belum disetel (config Firebase belum diisi).":!sy.team?"Belum tersambung. Isi kode tim yang sama di 3 HP.":syncState==="on"?(pend?"Tersambung · sedang mengirim perubahan…":"Tersambung · semua data sudah sama ✓"):syncState==="off"?"Offline · perubahan disimpan di HP & dikirim otomatis saat online.":syncState==="err"?"Gagal sambung. Cek internet / kode tim, lalu tekan Sambungkan lagi.":"Menyambung…";
+    if(document.activeElement!==$("y_team"))$("y_team").value=sy.team||"";$("y_off").hidden=!sy.team;$("y_on").textContent=sy.team?"Sambungkan ulang":"Sambungkan"}}
+function stopSync(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];ready={};base=null}
+async function startSync(){stopSync();if(!FB_CONFIG||!sy.team){syncState="off";syncUI();return}
+  syncState=navigator.onLine?"wait":"off";syncUI();
+  try{await sdk();
+    if(!db){if(!firebase.apps.length)firebase.initializeApp(FB_CONFIG);db=firebase.firestore();try{await db.enablePersistence({synchronizeTabs:true})}catch(e){}}
+    if(!firebase.auth().currentUser)await firebase.auth().signInAnonymously();
+    base=db.collection("teams").doc(sy.team);
+    ["orders","products"].forEach(col=>unsubs.push(base.collection(col).onSnapshot({includeMetadataChanges:true},snap=>{
+      let ch=false;snap.docChanges().forEach(c=>{if(c.type!=="removed"&&!c.doc.metadata.hasPendingWrites&&applyRemote(col,c.doc.id,c.doc.data()))ch=true});
+      onSnap(col,snap,ch)},err)));
+    unsubs.push(base.collection("meta").doc("settings").onSnapshot({includeMetadataChanges:true},d=>{let ch=false;
+      if(d.exists&&!d.metadata.hasPendingWrites){const r=d.data();if((r.updated||0)>(+S().updated||0)){st.settings={...DEF,...(r.settings||{}),updated:r.updated};sy.setSent=r.updated;sy.setJson=setJ();ch=true}}
+      onSnap("settings",d,ch)},err));
+  }catch(e){err(e)}}
+function err(e){console.log("[sync]",e);syncState=navigator.onLine?"err":"off";syncUI()}
+function onSnap(k,snap,ch){if(!snap.metadata.fromCache)ready[k]=true;
+  syncState=snap.metadata.fromCache&&!navigator.onLine?"off":"on";pend=!!snap.metadata.hasPendingWrites;
+  if(ch){localSave();saveSy();remoteRender()}
+  if(ready.orders&&ready.products&&ready.settings&&!ready.pushed){ready.pushed=true;pushNow()}
+  syncUI()}
+function remoteRender(){const a=document.activeElement;if(view==="atur"&&a&&$("v-atur").contains(a)&&a.tagName!=="BUTTON")return;if(view==="harga"&&a&&a.tagName==="INPUT"){renderKatalog();return}render()}
+function applyRemote(col,id,r){const k=col+"/"+id,arr=col==="orders"?st.orders:(st.products=st.products||[]);const i=arr.findIndex(x=>x.id===id);
+  const lu=i>=0?(arr[i].updated||arr[i].created||0):Math.abs(sy.sent[k]||0),ru=r.updated||r.created||0;
+  if(ru<=lu)return false;
+  if(r.deleted){if(i>=0)arr.splice(i,1);sy.sent[k]=-ru}else{if(i>=0)arr[i]=r;else arr.push(r);sy.sent[k]=ru}return true}
+function queuePush(){clearTimeout(pushT);pushT=setTimeout(pushNow,400)}
+function pushNow(){if(!base||!ready.pushed)return;const ops=[];
+  [["orders",st.orders],["products",st.products||[]]].forEach(([col,arr])=>{const ids=new Set();
+    arr.forEach(x=>{const k=col+"/"+x.id,u=x.updated||x.created||0;ids.add(k);if(sy.sent[k]!==u){ops.push([base.collection(col).doc(x.id),JSON.parse(JSON.stringify(x))]);sy.sent[k]=u}});
+    Object.keys(sy.sent).forEach(k=>{if(k.startsWith(col+"/")&&!ids.has(k)&&sy.sent[k]>=0){const id=k.slice(col.length+1),now=Date.now();ops.push([base.collection(col).doc(id),{id,deleted:true,updated:now}]);sy.sent[k]=-now}})});
+  const su=+S().updated||0;if(su&&su!==sy.setSent){ops.push([base.collection("meta").doc("settings"),{settings:JSON.parse(JSON.stringify(S())),updated:su}]);sy.setSent=su}
+  saveSy();if(!ops.length)return;pend=true;syncUI();
+  for(let i=0;i<ops.length;i+=400){const b=db.batch();ops.slice(i,i+400).forEach(([ref,data])=>b.set(ref,data));b.commit().catch(err)}}
+$("y_on").onclick=()=>{const t=$("y_team").value.trim().toLowerCase().replace(/[^a-z0-9-]/g,"");
+  if(t.length<8){toast("Kode tim minimal 8 huruf/angka");return}if(!FB_CONFIG){toast("Config Firebase belum diisi");return}
+  if(t!==sy.team){sy={team:t,sent:{},setSent:0,setJson:setJ()};saveSy()}startSync();toast("Menyambung ke tim…")};
+$("y_off").onclick=()=>arm($("y_off"),"Putuskan",()=>{stopSync();sy={team:"",sent:{},setSent:0,setJson:setJ()};saveSy();syncState="off";syncUI();toast("Sync diputus. Data tetap ada di HP ini.")});
+addEventListener("online",()=>{if(sy.team&&(!base||syncState==="err"))startSync();else syncUI()});
+addEventListener("offline",()=>{if(sy.team){syncState="off";syncUI()}});
+go("harga");startSync();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
 </script>
