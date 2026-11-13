@@ -178,14 +178,12 @@ nav button[aria-current="true"]{color:var(--accent)}
     <label>Dibagi rata (%)<input id="s_splitEqual" type="number" inputmode="numeric"></label>
     <label>Kas ManMan (%)<input id="s_splitKas" type="number" inputmode="numeric"></label></div></div>
   <button class="pri wide" id="s_save">Simpan pengaturan</button>
-  <div class="card"><h3>Backup data</h3>
+  <div class="card"><h3>Backup data (cadangan)</h3>
     <p class="break" style="margin:0 0 10px" id="b_info"></p>
     <div class="row"><button id="b_export">Backup sekarang</button><button id="b_csv">Export Excel (CSV)</button></div>
-    <label style="margin-top:12px">Gabung data dari HP teman<input id="b_merge" type="file" accept=".json,application/json"></label>
-    <p class="break" style="margin:4px 0 0">Order teman ditambahkan ke HP ini. Order yang sama tidak dobel; yang paling baru diubah yang dipakai.</p>
     <label style="margin-top:12px">Pulihkan dari file backup (ganti semua data, ikut ke semua HP kalau sync aktif)<input id="b_import" type="file" accept=".json,application/json"></label>
   </div>
-  <p class="break" style="text-align:center;margin:0">ManMan Jastip · versi 13</p>
+  <p class="break" style="text-align:center;margin:0">ManMan Jastip · versi 14</p>
   <div class="card"><h3>Reset (untuk testing)</h3>
     <p class="break" style="margin:0 0 10px">Tidak bisa dibatalkan. Kalau sync aktif, order ikut terhapus di <b>semua HP</b>. Bikin backup dulu kalau datanya masih perlu.</p>
     <div class="list"><button class="del wide" id="r_orders">Hapus semua order</button><button class="del wide" id="r_all">Reset semua (order, katalog, pengaturan)</button></div>
@@ -381,7 +379,7 @@ $("b_import").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{cons
   st={settings:{...DEF,...(d.settings||{})},orders:d.orders,products:d.products||[],lastBackup:d.lastBackup||null,me:st.me};save();go("order");toast("Data dipulihkan: "+d.orders.length+" order")}catch(_){toast("File backup tidak valid")}e.target.value=""};
 
 $("s_me").onchange=()=>{st.me=+$("s_me").value;save();toast("HP ini: "+S().members[st.me])};
-$("b_merge").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.orders))throw 0;
+if($("b_merge"))$("b_merge").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.orders))throw 0;
   let add=0,upd=0;d.orders.forEach(o=>{const ex=st.orders.find(x=>x.id===o.id);if(!ex){st.orders.push(o);add++}else if((o.updated||o.created||0)>(ex.updated||ex.created||0)){Object.assign(ex,o);upd++}});
   st.products=st.products||[];(d.products||[]).forEach(p=>{const ex=st.products.find(x=>x.id===p.id);if(!ex)st.products.push(p);else if((p.updated||0)>(ex.updated||0))Object.assign(ex,p)});
   save();go("order");toast(`${add} order baru, ${upd} diperbarui`)}catch(_){toast("File backup tidak valid")}e.target.value=""};
