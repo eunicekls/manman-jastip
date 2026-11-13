@@ -392,7 +392,7 @@ $("r_all").onclick=()=>arm($("r_all"),"Reset semua (order, katalog, pengaturan)"
 document.addEventListener("input",e=>{const t=e.target;if(t.matches&&t.matches('input[inputmode="decimal"]')&&t.value.includes(",")){t.value=t.value.replace(/,/g,".");t.dispatchEvent(new Event("input",{bubbles:true}))}},true);
 /* ---- boot ---- */
 /* ---- sync tim (Firebase) ---- */
-const FB_CONFIG=null; /* diisi config Firebase */
+const FB_CONFIG={apiKey:"AIzaSyCBgdlQjZtvONINfZMJQERqL87uEX2nwNw",authDomain:"manman-jastip.firebaseapp.com",projectId:"manman-jastip",storageBucket:"manman-jastip.firebasestorage.app",messagingSenderId:"806008948343",appId:"1:806008948343:web:040167d0ede0a9bb4d2872"};
 const SDK="https://www.gstatic.com/firebasejs/10.12.2/";
 const SKEY=KEY+"-sync";
 let sy={team:"",sent:{},setSent:0,setJson:""};try{sy={...sy,...JSON.parse(localStorage.getItem(SKEY)||"{}")}}catch(e){}
