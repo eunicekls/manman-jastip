@@ -94,7 +94,7 @@ nav button[aria-current="true"]{color:var(--accent)}
       <label>Qty<input id="h_qty" type="number" inputmode="numeric" value="1"></label>
     </div>
     <div class="f2" style="margin-top:10px">
-      <label>Fee / pcs (Rp)<input id="h_fee" type="number" inputmode="numeric" min="0" step="1000" placeholder="Otomatis"></label>
+      <label>Fee / pcs (Rp)<input id="h_fee" type="number" inputmode="numeric" min="0" step="any" placeholder="Otomatis"></label>
       <label>Bagasi<select id="h_dir"><option value="0">Pulang GZ→JKT</option><option value="1">Berangkat JKT→GZ</option></select></label>
     </div>
     <div class="big" id="h_total">Rp0</div>
@@ -218,7 +218,7 @@ nav button[aria-current="true"]{color:var(--accent)}
       <label>Status<select id="o_status"></select></label>
     </div>
     <label>Bagasi<select id="o_dir"><option value="0">Pulang GZ→JKT (titip beli)</option><option value="1">Berangkat JKT→GZ (handcarry)</option></select></label>
-    <label>Fee jasa (Rp) <small style="opacity:.7">— ketik sendiri; kalau kosong pakai otomatis</small><input id="o_fee" type="number" inputmode="numeric" min="0" step="1000" placeholder="Otomatis"></label>
+    <label>Fee jasa (Rp) <small style="opacity:.7">— ketik sendiri; kalau kosong pakai otomatis</small><input id="o_fee" type="number" inputmode="numeric" min="0" step="any" placeholder="Otomatis"></label>
     <label>Pembayaran<select id="o_pay"><option value="0">Belum bayar</option><option value="1">DP 50%</option><option value="2">Lunas</option></select></label>
     <label>Catatan<input id="o_note" placeholder="Warna, ukuran, toko…"></label>
     <div class="note" id="oPrev"></div>
