@@ -460,8 +460,8 @@ if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catc
     <img src="icon-192.png" alt="ManMan" style="display:block;width:96px;height:96px;border-radius:22px;margin:0 auto 20px;box-shadow:0 4px 14px rgba(196,51,111,.18)">
     <label style="color:#555;display:block;font-size:14px;margin-bottom:12px">ID
       <input id="g_id" name="username" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:11px;border:1px solid #e3c9d4;border-radius:10px;font-size:16px;background:#fff;color:#222;-webkit-text-fill-color:#222"></label>
-    <label style="color:#555;display:block;font-size:14px;margin-bottom:16px">Password
-      <input id="g_pw" name="password" type="password" autocomplete="current-password" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:11px;border:1px solid #e3c9d4;border-radius:10px;font-size:16px;background:#fff;color:#222;-webkit-text-fill-color:#222"></label>
+    <label style="color:#555;display:block;font-size:14px;margin-bottom:16px;position:relative">Password
+      <input id="g_pw" name="password" type="password" autocomplete="current-password" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:11px;border:1px solid #e3c9d4;border-radius:10px;font-size:16px;background:#fff;color:#222;-webkit-text-fill-color:#222;padding-right:48px"><button type="button" id="g_eye" aria-label="Lihat password" style="position:absolute;right:4px;bottom:4px;width:42px;height:38px;padding:0;border:0;border-radius:8px;background:transparent;color:#b07a90;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></label>
     <button type="submit" id="g_btn" style="width:100%;padding:12px;border:0;border-radius:10px;background:#c4336f;color:#fff;font-size:16px;font-weight:600">Masuk</button>
     <p id="g_msg" style="color:#c4336f;font-size:13px;min-height:1.2em;margin:10px 0 0"></p>
   </form>
@@ -498,6 +498,10 @@ function mmLoginValid(){var t=mmLoginAt();return t>0&&Date.now()-t<MM_DAYS*864e5
       msg.textContent=/network/.test(c)?"Nggak ada internet, coba lagi.":/too-many/.test(c)?"Kebanyakan coba, tunggu sebentar ya.":/user-not-found|wrong-password|invalid/.test(c)?"ID atau password salah.":"Gagal masuk ("+c+")";
     }).then(function(){btn.disabled=false});
   });
+  // Tombol mata: lihat/sembunyikan password.
+  var eye=document.getElementById("g_eye"),pwi=document.getElementById("g_pw"),EYE=eye.innerHTML,EYEOFF=EYE.replace("</svg>",'<line x1="3" y1="3" x2="21" y2="21"/></svg>');
+  eye.addEventListener("click",function(ev){ev.preventDefault();var sh=pwi.type==="password";pwi.type=sh?"text":"password";eye.innerHTML=sh?EYEOFF:EYE;eye.setAttribute("aria-label",sh?"Sembunyikan password":"Lihat password");pwi.focus()});
+  form.addEventListener("submit",function(){pwi.type="password";eye.innerHTML=EYE});
   // Tombol Keluar di menu Atur.
   var atur=document.getElementById("v-atur");if(atur){var c=document.createElement("div");c.className="card";
     c.innerHTML='<h3>Akun</h3><p class="break" style="margin:0 0 10px">Login berlaku 7 hari, sesudah itu diminta masuk lagi.</p><button id="g_out">Keluar</button>';
