@@ -183,7 +183,7 @@ nav button[aria-current="true"]{color:var(--accent)}
     <div class="row"><button id="b_export">Backup sekarang</button><button id="b_csv">Export Excel (CSV)</button></div>
     <label style="margin-top:12px">Pulihkan dari file backup (ganti semua data, ikut ke semua HP kalau sync aktif)<input id="b_import" type="file" accept=".json,application/json"></label>
   </div>
-  <p class="break" style="text-align:center;margin:0">ManMan Jastip · versi 14</p>
+  <p class="break" style="text-align:center;margin:0">ManMan Jastip · versi 15</p>
   <div class="card"><h3>Reset (untuk testing)</h3>
     <p class="break" style="margin:0 0 10px">Tidak bisa dibatalkan. Kalau sync aktif, order ikut terhapus di <b>semua HP</b>. Bikin backup dulu kalau datanya masih perlu.</p>
     <div class="list"><button class="del wide" id="r_orders">Hapus semua order</button><button class="del wide" id="r_all">Reset semua (order, katalog, pengaturan)</button></div>
@@ -410,7 +410,7 @@ async function startSync(){stopSync();if(!FB_CONFIG||!sy.team){syncState="off";s
   syncState=navigator.onLine?"wait":"off";syncUI();
   try{await sdk();
     if(!db){if(!firebase.apps.length)firebase.initializeApp(FB_CONFIG);db=firebase.firestore();try{await db.enablePersistence({synchronizeTabs:true})}catch(e){}}
-    if(!firebase.auth().currentUser)await firebase.auth().signInAnonymously();
+    {const u=await new Promise(r=>{const x=firebase.auth().onAuthStateChanged(v=>{x();r(v)})});if(!u||u.isAnonymous||(typeof mmLoginValid==="function"&&!mmLoginValid()))throw new Error("belum login");}
     base=db.collection("teams").doc(sy.team);
     ["orders","products"].forEach(col=>unsubs.push(base.collection(col).onSnapshot({includeMetadataChanges:true},snap=>{
       let ch=false;snap.docChanges().forEach(c=>{if(c.type!=="removed"&&!c.doc.metadata.hasPendingWrites&&applyRemote(col,c.doc.id,c.doc.data()))ch=true});
@@ -448,5 +448,57 @@ go("harga");startSync();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
 </script>
+<!-- LOGIN (versi 15) -->
+<div id="gate" style="position:fixed;inset:0;z-index:9999;background:#fff5f8;display:flex;align-items:center;justify-content:center;padding:24px">
+  <form id="g_form" autocomplete="on" style="width:100%;max-width:340px;background:#fff;border-radius:18px;padding:26px 22px;box-shadow:0 6px 24px rgba(196,51,111,.15);font-family:inherit">
+    <h2 style="margin:0 0 4px;color:#c4336f">ManMan Jastip</h2>
+    <p style="margin:0 0 18px;color:#777;font-size:14px">Masuk dulu ya. Sekali login berlaku 7 hari.</p>
+    <label style="display:block;font-size:14px;margin-bottom:12px">ID
+      <input id="g_id" name="username" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:11px;border:1px solid #e3c9d4;border-radius:10px;font-size:16px"></label>
+    <label style="display:block;font-size:14px;margin-bottom:16px">Password
+      <input id="g_pw" name="password" type="password" autocomplete="current-password" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:11px;border:1px solid #e3c9d4;border-radius:10px;font-size:16px"></label>
+    <button type="submit" id="g_btn" style="width:100%;padding:12px;border:0;border-radius:10px;background:#c4336f;color:#fff;font-size:16px;font-weight:600">Masuk</button>
+    <p id="g_msg" style="color:#c4336f;font-size:13px;min-height:1.2em;margin:10px 0 0"></p>
+  </form>
+</div>
+<script>
+var MM_DOMAIN="@gmail.com", MM_KEY="mm_login_at", MM_DAYS=7;
+function mmLoginAt(){try{return +localStorage.getItem(MM_KEY)||0}catch(e){return 0}}
+function mmLoginValid(){var t=mmLoginAt();return t>0&&Date.now()-t<MM_DAYS*864e5}
+(function(){
+  var gate=document.getElementById("gate"),form=document.getElementById("g_form"),msg=document.getElementById("g_msg"),btn=document.getElementById("g_btn");
+  function show(){gate.style.display="none"}
+  function lock(m){gate.style.display="flex";msg.textContent=m||""}
+  function auth(){return Promise.resolve(sdk()).then(function(){if(!firebase.apps.length)firebase.initializeApp(FB_CONFIG);return firebase.auth()})}
+  function logout(m){try{localStorage.removeItem(MM_KEY)}catch(e){}try{stopSync();syncState="off";syncUI()}catch(e){}
+    lock(m);auth().then(function(a){return a.signOut()}).catch(function(){})}
+  // Sudah pernah login < 7 hari: langsung buka (tetap jalan offline).
+  if(mmLoginValid())show();else if(mmLoginAt())logout("Login sudah lewat 7 hari, masuk lagi ya.");
+  auth().then(function(a){a.onAuthStateChanged(function(u){
+    if(u&&!u.isAnonymous&&mmLoginValid())show();
+    else if(u)logout(mmLoginAt()?"Login sudah lewat 7 hari, masuk lagi ya.":"");
+    else lock(msg.textContent);
+  })}).catch(function(){if(!mmLoginValid())lock("Butuh internet untuk login.")});
+  // Cek ulang tiap app dibuka lagi / tiap jam.
+  function recheck(){if(mmLoginAt()&&!mmLoginValid())logout("Login sudah lewat 7 hari, masuk lagi ya.")}
+  document.addEventListener("visibilitychange",function(){if(!document.hidden)recheck()});setInterval(recheck,36e5);
+  form.addEventListener("submit",function(ev){ev.preventDefault();
+    var id=document.getElementById("g_id").value.trim().toLowerCase(),pw=document.getElementById("g_pw").value;
+    if(!id||!pw){msg.textContent="Isi ID dan password dulu";return}
+    var email=id.indexOf("@")>-1?id:id+MM_DOMAIN;btn.disabled=true;msg.textContent="Masuk…";
+    try{localStorage.setItem(MM_KEY,String(Date.now()))}catch(e){}
+    auth().then(function(a){return a.signInWithEmailAndPassword(email,pw)}).then(function(){
+      document.getElementById("g_pw").value="";msg.textContent="";show();try{startSync()}catch(e){}
+    }).catch(function(e){var c=(e&&e.code)||"";try{localStorage.removeItem(MM_KEY)}catch(x){}
+      msg.textContent=/network/.test(c)?"Nggak ada internet, coba lagi.":/too-many/.test(c)?"Kebanyakan coba, tunggu sebentar ya.":/user-not-found|wrong-password|invalid/.test(c)?"ID atau password salah.":"Gagal masuk ("+c+")";
+    }).then(function(){btn.disabled=false});
+  });
+  // Tombol Keluar di menu Atur.
+  var atur=document.getElementById("v-atur");if(atur){var c=document.createElement("div");c.className="card";
+    c.innerHTML='<h3>Akun</h3><p class="break" style="margin:0 0 10px">Login berlaku 7 hari, sesudah itu diminta masuk lagi.</p><button id="g_out">Keluar</button>';
+    atur.appendChild(c);document.getElementById("g_out").addEventListener("click",function(){logout("")})}
+})();
+</script>
+
 </body>
 </html>
